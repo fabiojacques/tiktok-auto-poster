@@ -6,18 +6,23 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ============================
-// Google Auth (SAFE)
+// GOOGLE AUTH (SAFE VERSION)
 // ============================
 let credentials;
 
 try {
+  if (!process.env.GOOGLE_SERVICE_ACCOUNT) {
+    throw new Error("Variável GOOGLE_SERVICE_ACCOUNT não encontrada.");
+  }
+
   credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
 
-  // Corrige quebra de linha da private_key
+  // Corrige quebras de linha da private_key
   credentials.private_key = credentials.private_key.replace(/\\n/g, "\n");
 
-} catch (err) {
-  console.error("❌ ERRO AO CARREGAR GOOGLE_SERVICE_ACCOUNT:", err);
+} catch (error) {
+  console.error("❌ ERRO AO CARREGAR GOOGLE_SERVICE_ACCOUNT");
+  console.error(error);
   process.exit(1);
 }
 
@@ -26,17 +31,20 @@ const auth = new google.auth.GoogleAuth({
   scopes: ["https://www.googleapis.com/auth/drive.readonly"],
 });
 
-const drive = google.drive({ version: "v3", auth });
+const drive = google.drive({
+  version: "v3",
+  auth,
+});
 
 // ============================
-// Health Check
+// HEALTH CHECK
 // ============================
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
 // ============================
-// Listar pastas
+// LISTAR PASTAS (ROOT OU SUBPASTA)
 // ============================
 app.get("/api/folders", async (req, res) => {
   try {
@@ -49,13 +57,13 @@ app.get("/api/folders", async (req, res) => {
 
     res.json(response.data.files);
   } catch (error) {
-    console.error(error);
+    console.error("❌ Erro ao buscar pastas:", error);
     res.status(500).json({ error: "Erro ao buscar pastas" });
   }
 });
 
 // ============================
-// Listar vídeos
+// LISTAR VÍDEOS DA PASTA
 // ============================
 app.get("/api/videos", async (req, res) => {
   try {
@@ -72,12 +80,14 @@ app.get("/api/videos", async (req, res) => {
 
     res.json(response.data.files);
   } catch (error) {
-    console.error(error);
+    console.error("❌ Erro ao buscar vídeos:", error);
     res.status(500).json({ error: "Erro ao buscar vídeos" });
   }
 });
 
 // ============================
+// START SERVER
+// ============================
 app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
+  console.log(`🚀 Servidor rodando na porta ${PORT}`);
 });
