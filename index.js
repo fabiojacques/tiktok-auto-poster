@@ -6,41 +6,36 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ============================
-// GOOGLE AUTH (SAFE)
+// GOOGLE AUTH (SEGURO)
 // ============================
-let credentials;
+let drive = null;
 
 try {
   if (!process.env.GOOGLE_SERVICE_ACCOUNT) {
     throw new Error("GOOGLE_SERVICE_ACCOUNT não definido");
   }
 
-  credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
+  const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
 
-  // Corrige quebras de linha da chave privada
+  // Corrige quebra de linha da private_key
   credentials.private_key = credentials.private_key.replace(/\\n/g, "\n");
 
-} catch (err) {
-  console.error("❌ ERRO AO CARREGAR GOOGLE_SERVICE_ACCOUNT:");
-  console.error(err.message);
-
-  // evita crash infinito
-  credentials = null;
-}
-
-let drive = null;
-
-if (credentials) {
   const auth = new google.auth.GoogleAuth({
     credentials,
     scopes: ["https://www.googleapis.com/auth/drive.readonly"],
   });
 
   drive = google.drive({ version: "v3", auth });
+
+  console.log("✅ Google Drive conectado com sucesso");
+
+} catch (err) {
+  console.error("❌ ERRO AO INICIALIZAR GOOGLE DRIVE:");
+  console.error(err.message);
 }
 
 // ============================
-// HEALTH CHECK
+// HEALTH
 // ============================
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
@@ -66,7 +61,7 @@ app.get("/api/folders", async (req, res) => {
 
     res.json(response.data.files);
   } catch (error) {
-    console.error(error);
+    console.error("Erro ao buscar pastas:", error);
     res.status(500).json({ error: "Erro ao buscar pastas" });
   }
 });
@@ -95,7 +90,7 @@ app.get("/api/videos", async (req, res) => {
 
     res.json(response.data.files);
   } catch (error) {
-    console.error(error);
+    console.error("Erro ao buscar vídeos:", error);
     res.status(500).json({ error: "Erro ao buscar vídeos" });
   }
 });
