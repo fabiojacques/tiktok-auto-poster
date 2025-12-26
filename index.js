@@ -6,11 +6,11 @@ const axios = require("axios");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ✅ SERVIR ARQUIVOS PÚBLICOS (OBRIGATÓRIO)
+// 🔥 SERVIR ARQUIVOS ESTÁTICOS (MUITO IMPORTANTE)
 app.use(express.static(path.join(__dirname, "public")));
 
 // ==========================
-// HEALTH
+// HEALTH CHECK
 // ==========================
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
@@ -47,9 +47,9 @@ app.get("/auth/tiktok", (req, res) => {
 });
 
 app.get("/auth/tiktok/callback", async (req, res) => {
-  const { code } = req.query;
-
   try {
+    const { code } = req.query;
+
     const response = await axios.post(
       "https://open.tiktokapis.com/v2/oauth/token/",
       {
@@ -64,10 +64,7 @@ app.get("/auth/tiktok/callback", async (req, res) => {
       }
     );
 
-    res.json({
-      message: "Autenticado com sucesso!",
-      data: response.data,
-    });
+    res.json(response.data);
   } catch (err) {
     console.error(err.response?.data || err.message);
     res.status(500).json({ error: "Erro ao autenticar com TikTok" });
