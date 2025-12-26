@@ -6,7 +6,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ============================
-// GOOGLE AUTH (SEGURO)
+// GOOGLE AUTH (SAFE + DEBUG)
 // ============================
 let drive = null;
 
@@ -17,7 +17,7 @@ try {
 
   const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
 
-  // Corrige quebra de linha da private_key
+  // Corrige quebras de linha da private_key
   credentials.private_key = credentials.private_key.replace(/\\n/g, "\n");
 
   const auth = new google.auth.GoogleAuth({
@@ -27,7 +27,7 @@ try {
 
   drive = google.drive({ version: "v3", auth });
 
-  console.log("✅ Google Drive conectado com sucesso");
+  console.log("✅ Google Drive inicializado com sucesso");
 
 } catch (err) {
   console.error("❌ ERRO AO INICIALIZAR GOOGLE DRIVE:");
@@ -35,7 +35,7 @@ try {
 }
 
 // ============================
-// HEALTH
+// HEALTH CHECK
 // ============================
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
@@ -61,41 +61,12 @@ app.get("/api/folders", async (req, res) => {
 
     res.json(response.data.files);
   } catch (error) {
-    console.error("Erro ao buscar pastas:", error);
+    console.error("Erro Google Drive:", error.message);
     res.status(500).json({ error: "Erro ao buscar pastas" });
   }
 });
 
 // ============================
-// LISTAR VÍDEOS
-// ============================
-app.get("/api/videos", async (req, res) => {
-  if (!drive) {
-    return res.status(500).json({
-      error: "Google Drive não inicializado",
-    });
-  }
-
-  const { folderId } = req.query;
-
-  if (!folderId) {
-    return res.status(400).json({ error: "folderId é obrigatório" });
-  }
-
-  try {
-    const response = await drive.files.list({
-      q: `'${folderId}' in parents and mimeType contains 'video/' and trashed = false`,
-      fields: "files(id, name, webViewLink)",
-    });
-
-    res.json(response.data.files);
-  } catch (error) {
-    console.error("Erro ao buscar vídeos:", error);
-    res.status(500).json({ error: "Erro ao buscar vídeos" });
-  }
-});
-
-// ============================
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`);
 });
