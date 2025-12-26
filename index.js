@@ -6,7 +6,9 @@ const axios = require("axios");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 🔥 SERVIR ARQUIVOS ESTÁTICOS (MUITO IMPORTANTE)
+// ==========================
+// 🔥 SERVIR ARQUIVOS ESTÁTICOS (OBRIGATÓRIO)
+// ==========================
 app.use(express.static(path.join(__dirname, "public")));
 
 // ==========================
@@ -36,7 +38,7 @@ const REDIRECT_URI = process.env.TIKTOK_REDIRECT_URI;
 
 app.get("/auth/tiktok", (req, res) => {
   const url =
-    `https://www.tiktok.com/v2/auth/authorize/` +
+    `https://www.tiktok.com/v2/auth/authorize` +
     `?client_key=${CLIENT_KEY}` +
     `&scope=user.info.basic,video.publish` +
     `&response_type=code` +
@@ -60,7 +62,9 @@ app.get("/auth/tiktok/callback", async (req, res) => {
         redirect_uri: REDIRECT_URI,
       },
       {
-        headers: { "Content-Type": "application/json" }
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
     );
 
@@ -71,6 +75,9 @@ app.get("/auth/tiktok/callback", async (req, res) => {
   }
 });
 
+// ==========================
+// START SERVER
+// ==========================
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
