@@ -1,23 +1,58 @@
+require("dotenv").config();
 const express = require("express");
 const { google } = require("googleapis");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Google Drive usando API KEY
-const drive = google.drive({
-  version: "v3",
-  auth: process.env.GOOGLE_API_KEY,
-});
+// ============================
+// GOOGLE AUTH (CORRETO)
+// ============================
+let drive;
 
-// Health check
+try {
+  if (!process.env.GOOGLE_SERVICE_ACCOUNT) {
+    throw new Error("GOOGLE_SERVICE_ACCOUNT não definido");
+  }
+
+  const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
+
+  // Corrige quebras de linha da private_key
+  credentials.private_key = credentials.private_key.replace(/\\n/g, "\n");
+
+  const auth = new google.auth.JWT(
+    credentials.client_email,
+    null,
+    credentials.private_key,
+    ["https://www.googleapis.com/auth/drive.readonly"]
+  );
+
+  drive = google.drive({
+    version: "v3",
+    auth,
+  });
+
+  console.log("✅ Google Drive conectado com sucesso");
+} catch (err) {
+  console.error("❌ Erro ao iniciar Google Drive:", err.message);
+}
+
+// ============================
+// HEALTH CHECK
+// ============================
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-// Listar pastas públicas
+// ============================
+// LISTAR PASTAS
+// ============================
 app.get("/api/folders", async (req, res) => {
   try {
+    if (!drive) {
+      return res.status(500).json({ error: "Google Drive não inicializado" });
+    }
+
     const parent = req.query.parent || "root";
 
     const response = await drive.files.list({
@@ -34,6 +69,7 @@ app.get("/api/folders", async (req, res) => {
   }
 });
 
+// ============================
 app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
+  console.log(`🚀 Servidor rodando na porta ${PORT}`);
 });
