@@ -6,28 +6,25 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ============================
-// VALIDAR ENV
+// GOOGLE AUTH (SEGURO)
 // ============================
-if (!process.env.GOOGLE_SERVICE_ACCOUNT) {
-  console.error("❌ GOOGLE_SERVICE_ACCOUNT não definida");
-  process.exit(1);
-}
-
 let credentials;
 
 try {
+  if (!process.env.GOOGLE_SERVICE_ACCOUNT) {
+    throw new Error("GOOGLE_SERVICE_ACCOUNT não definida");
+  }
+
   credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
 
-  // Corrige quebra de linha do private_key
+  // Corrige quebra de linha da chave privada
   credentials.private_key = credentials.private_key.replace(/\\n/g, "\n");
+
 } catch (err) {
-  console.error("❌ Erro ao carregar credenciais:", err);
+  console.error("❌ Erro ao carregar GOOGLE_SERVICE_ACCOUNT:", err.message);
   process.exit(1);
 }
 
-// ============================
-// Google Auth
-// ============================
 const auth = new google.auth.GoogleAuth({
   credentials,
   scopes: ["https://www.googleapis.com/auth/drive.readonly"],
@@ -56,7 +53,7 @@ app.get("/api/folders", async (req, res) => {
 
     res.json(response.data.files);
   } catch (error) {
-    console.error(error);
+    console.error("Erro ao listar pastas:", error);
     res.status(500).json({ error: "Erro ao buscar pastas" });
   }
 });
@@ -79,7 +76,7 @@ app.get("/api/videos", async (req, res) => {
 
     res.json(response.data.files);
   } catch (error) {
-    console.error(error);
+    console.error("Erro ao buscar vídeos:", error);
     res.status(500).json({ error: "Erro ao buscar vídeos" });
   }
 });
