@@ -20,8 +20,7 @@ app.get("/health", (req, res) => {
 // LISTA DE VÍDEOS
 // ==========================
 const videos = [
-  "https://drive.google.com/file/d/1ai6woPeAJKa2weM72BZJPcL3RhlOqV7K/view",
-  "https://drive.google.com/file/d/1qcquC86pDeGvJW9xYp0muJRN1atj-qhB/view"
+  "https://drive.google.com/file/d/1ai6woPeAJKa2weM72BZJPcL3RhlOqV7K/view"
 ];
 
 app.get("/api/videos", (req, res) => {
@@ -37,7 +36,7 @@ const REDIRECT_URI = process.env.TIKTOK_REDIRECT_URI;
 
 app.get("/auth/tiktok", (req, res) => {
   const url =
-    `https://www.tiktok.com/v2/auth/authorize` +
+    `https://www.tiktok.com/v2/auth/authorize/` +
     `?client_key=${CLIENT_KEY}` +
     `&scope=user.info.basic,video.publish` +
     `&response_type=code` +
@@ -60,11 +59,15 @@ app.get("/auth/tiktok/callback", async (req, res) => {
         grant_type: "authorization_code",
         redirect_uri: REDIRECT_URI,
       },
-      { headers: { "Content-Type": "application/json" } }
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
     );
 
     res.json({
-      success: true,
+      message: "Autenticado com sucesso!",
       data: response.data,
     });
   } catch (err) {
