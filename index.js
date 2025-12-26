@@ -6,9 +6,7 @@ const axios = require("axios");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ==========================
-// SERVIR ARQUIVOS ESTÁTICOS (IMPORTANTE)
-// ==========================
+// 🔥 SERVIR ARQUIVOS ESTÁTICOS (OBRIGATÓRIO)
 app.use(express.static(path.join(__dirname, "public")));
 
 // ==========================
@@ -23,9 +21,7 @@ app.get("/health", (req, res) => {
 // ==========================
 const videos = [
   "https://drive.google.com/file/d/1ai6woPeAJKa2weM72BZJPcL3RhlOqV7K/view",
-  "https://drive.google.com/file/d/1qcquC86pDeGvJW9xYp0muJRN1atj-qhB/view",
-  "https://drive.google.com/file/d/1bJcORB48b05JpVZWaz4OBHCnwialGKGJ/view"
-  // pode continuar depois
+  "https://drive.google.com/file/d/1qcquC86pDeGvJW9xYp0muJRN1atj-qhB/view"
 ];
 
 app.get("/api/videos", (req, res) => {
@@ -64,11 +60,7 @@ app.get("/auth/tiktok/callback", async (req, res) => {
         grant_type: "authorization_code",
         redirect_uri: REDIRECT_URI,
       },
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
+      { headers: { "Content-Type": "application/json" } }
     );
 
     res.json({
