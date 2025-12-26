@@ -6,7 +6,7 @@ const axios = require("axios");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 🔥 SERVIR ARQUIVOS ESTÁTICOS (OBRIGATÓRIO)
+// ✅ SERVIR ARQUIVOS PÚBLICOS (OBRIGATÓRIO)
 app.use(express.static(path.join(__dirname, "public")));
 
 // ==========================
@@ -60,9 +60,7 @@ app.get("/auth/tiktok/callback", async (req, res) => {
         redirect_uri: REDIRECT_URI,
       },
       {
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" }
       }
     );
 
