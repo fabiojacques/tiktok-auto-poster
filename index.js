@@ -6,31 +6,38 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ============================
-// GOOGLE AUTH (SEGURO)
+// GOOGLE AUTH (SAFE)
 // ============================
 let credentials;
 
 try {
   if (!process.env.GOOGLE_SERVICE_ACCOUNT) {
-    throw new Error("GOOGLE_SERVICE_ACCOUNT não definida");
+    throw new Error("GOOGLE_SERVICE_ACCOUNT não definido");
   }
 
   credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
 
-  // Corrige quebra de linha da chave privada
+  // Corrige quebras de linha da chave privada
   credentials.private_key = credentials.private_key.replace(/\\n/g, "\n");
 
 } catch (err) {
-  console.error("❌ Erro ao carregar GOOGLE_SERVICE_ACCOUNT:", err.message);
-  process.exit(1);
+  console.error("❌ ERRO AO CARREGAR GOOGLE_SERVICE_ACCOUNT:");
+  console.error(err.message);
+
+  // evita crash infinito
+  credentials = null;
 }
 
-const auth = new google.auth.GoogleAuth({
-  credentials,
-  scopes: ["https://www.googleapis.com/auth/drive.readonly"],
-});
+let drive = null;
 
-const drive = google.drive({ version: "v3", auth });
+if (credentials) {
+  const auth = new google.auth.GoogleAuth({
+    credentials,
+    scopes: ["https://www.googleapis.com/auth/drive.readonly"],
+  });
+
+  drive = google.drive({ version: "v3", auth });
+}
 
 // ============================
 // HEALTH CHECK
@@ -43,6 +50,12 @@ app.get("/health", (req, res) => {
 // LISTAR PASTAS
 // ============================
 app.get("/api/folders", async (req, res) => {
+  if (!drive) {
+    return res.status(500).json({
+      error: "Google Drive não inicializado",
+    });
+  }
+
   try {
     const parent = req.query.parent || "root";
 
@@ -53,7 +66,7 @@ app.get("/api/folders", async (req, res) => {
 
     res.json(response.data.files);
   } catch (error) {
-    console.error("Erro ao listar pastas:", error);
+    console.error(error);
     res.status(500).json({ error: "Erro ao buscar pastas" });
   }
 });
@@ -62,13 +75,19 @@ app.get("/api/folders", async (req, res) => {
 // LISTAR VÍDEOS
 // ============================
 app.get("/api/videos", async (req, res) => {
+  if (!drive) {
+    return res.status(500).json({
+      error: "Google Drive não inicializado",
+    });
+  }
+
+  const { folderId } = req.query;
+
+  if (!folderId) {
+    return res.status(400).json({ error: "folderId é obrigatório" });
+  }
+
   try {
-    const { folderId } = req.query;
-
-    if (!folderId) {
-      return res.status(400).json({ error: "folderId é obrigatório" });
-    }
-
     const response = await drive.files.list({
       q: `'${folderId}' in parents and mimeType contains 'video/' and trashed = false`,
       fields: "files(id, name, webViewLink)",
@@ -76,7 +95,7 @@ app.get("/api/videos", async (req, res) => {
 
     res.json(response.data.files);
   } catch (error) {
-    console.error("Erro ao buscar vídeos:", error);
+    console.error(error);
     res.status(500).json({ error: "Erro ao buscar vídeos" });
   }
 });
