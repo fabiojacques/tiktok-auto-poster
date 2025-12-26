@@ -1,26 +1,42 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
+const express = require("express");
+const { listFolders, listVideos } = require("./services/googleDrive");
 
 const app = express();
-
-// Middlewares
-app.use(cors());
-app.use(express.json());
-
-// Rota principal (teste)
-app.get('/', (req, res) => {
-  res.send('🚀 TikTok Auto Poster rodando com sucesso!');
-});
-
-// Health check (importante pro Railway)
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
-});
-
-// Porta dinâmica (Railway usa isso)
 const PORT = process.env.PORT || 3000;
 
+// Rota raiz (teste)
+app.get("/", (req, res) => {
+  res.send("🚀 TikTok Auto Poster rodando!");
+});
+
+// Lista pastas (nichos)
+app.get("/api/folders", async (req, res) => {
+  try {
+    const folders = await listFolders();
+    res.json(folders);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Erro ao buscar pastas" });
+  }
+});
+
+// Lista vídeos de uma pasta
+app.get("/api/videos", async (req, res) => {
+  const { folderId } = req.query;
+
+  if (!folderId) {
+    return res.status(400).json({ error: "folderId é obrigatório" });
+  }
+
+  try {
+    const videos = await listVideos(folderId);
+    res.json(videos);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Erro ao buscar vídeos" });
+  }
+});
+
 app.listen(PORT, () => {
-  console.log(`🔥 Servidor rodando na porta ${PORT}`);
+  console.log(`🚀 Servidor rodando na porta ${PORT}`);
 });
