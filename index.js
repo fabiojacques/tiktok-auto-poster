@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const { google } = require("googleapis");
 
@@ -7,40 +8,31 @@ const PORT = process.env.PORT || 3000;
 // ============================
 // Google Auth
 // ============================
+const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
+
 const auth = new google.auth.GoogleAuth({
-  credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT),
+  credentials,
   scopes: ["https://www.googleapis.com/auth/drive.readonly"],
 });
 
 const drive = google.drive({ version: "v3", auth });
 
 // ============================
-// ROTA PRINCIPAL
-// ============================
-app.get("/", (req, res) => {
-  res.send("🚀 TikTok Auto Poster rodando com sucesso!");
-});
-
-// ============================
-// HEALTH CHECK
+// Health Check
 // ============================
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
 // ============================
-// LISTAR PASTAS DO DRIVE
+// Listar pastas (nível raiz ou subpastas)
 // ============================
 app.get("/api/folders", async (req, res) => {
   try {
-    const parentFolderId = req.query.parent; // opcional
-
-    const q = parentFolderId
-      ? `'${parentFolderId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`
-      : `mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
+    const parent = req.query.parent || "root";
 
     const response = await drive.files.list({
-      q,
+      q: `'${parent}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
       fields: "files(id, name)",
     });
 
@@ -48,6 +40,29 @@ app.get("/api/folders", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Erro ao buscar pastas" });
+  }
+});
+
+// ============================
+// Listar vídeos da pasta
+// ============================
+app.get("/api/videos", async (req, res) => {
+  try {
+    const { folderId } = req.query;
+
+    if (!folderId) {
+      return res.status(400).json({ error: "folderId é obrigatório" });
+    }
+
+    const response = await drive.files.list({
+      q: `'${folderId}' in parents and mimeType contains 'video/' and trashed = false`,
+      fields: "files(id, name, webViewLink)",
+    });
+
+    res.json(response.data.files);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Erro ao buscar vídeos" });
   }
 });
 
