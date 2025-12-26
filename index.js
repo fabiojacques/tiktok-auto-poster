@@ -5,11 +5,11 @@ const { google } = require("googleapis");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ============================
-// GOOGLE AUTH (SAFE + DEBUG)
-// ============================
-let drive = null;
+let drive;
 
+// ============================
+// GOOGLE AUTH
+// ============================
 try {
   if (!process.env.GOOGLE_SERVICE_ACCOUNT) {
     throw new Error("GOOGLE_SERVICE_ACCOUNT não definido");
@@ -17,7 +17,7 @@ try {
 
   const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
 
-  // Corrige quebras de linha da private_key
+  // Corrige as quebras de linha da private_key
   credentials.private_key = credentials.private_key.replace(/\\n/g, "\n");
 
   const auth = new google.auth.GoogleAuth({
