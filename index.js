@@ -1,13 +1,29 @@
+require("dotenv").config();
 const express = require("express");
-const app = express();
+const axios = require("axios");
 
+const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ============================
-// LISTA FIXA DE VÍDEOS
-// ============================
+// ==========================
+// CONFIG TIKTOK
+// ==========================
+const CLIENT_KEY = process.env.TIKTOK_CLIENT_KEY;
+const CLIENT_SECRET = process.env.TIKTOK_CLIENT_SECRET;
+const REDIRECT_URI = process.env.TIKTOK_REDIRECT_URI;
+
+// ==========================
+// HEALTH
+// ==========================
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
+});
+
+// ==========================
+// LISTA DE VÍDEOS (SIMPLIFICADO)
+// ==========================
 const videos = [
-  "https://drive.google.com/file/d/1ai6woPeAJKa2weM72BZJPcL3RhlOqV7K/view",
+   "https://drive.google.com/file/d/1ai6woPeAJKa2weM72BZJPcL3RhlOqV7K/view",
   "https://drive.google.com/file/d/1qcquC86pDeGvJW9xYp0muJRN1atj-qhB/view",
   "https://drive.google.com/file/d/1bJcORB48b05JpVZWaz4OBHCnwialGKGJ/view",
   "https://drive.google.com/file/d/1CS5GTlg14Or877hCbhqpBrkeoMYyszkB/view",
@@ -57,21 +73,62 @@ const videos = [
   "https://drive.google.com/file/d/1aIknPGOd2ecgwq-AeEdiKHiPbvLYi0qY/view",
   "https://drive.google.com/file/d/1HLibYKNV_PWyX-af9DZg2hqUbgz3b7CC/view",
   "https://drive.google.com/file/d/1zMdT8dray99hKy1oHrMpBxclIzrrWAOr/view"
+  // você pode continuar colocando aqui
 ];
-
-// ============================
-// ROTAS
-// ============================
-
-app.get("/health", (req, res) => {
-  res.json({ status: "ok" });
-});
 
 app.get("/api/videos", (req, res) => {
   res.json(videos);
 });
 
-// ============================
+// ==========================
+// LOGIN COM TIKTOK
+// ==========================
+app.get("/auth/tiktok", (req, res) => {
+  const url =
+    `https://www.tiktok.com/v2/auth/authorize/` +
+    `?client_key=${CLIENT_KEY}` +
+    `&scope=user.info.basic,video.publish` +
+    `&response_type=code` +
+    `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
+    `&state=geniun`;
+
+  res.redirect(url);
+});
+
+// ==========================
+// CALLBACK TIKTOK
+// ==========================
+app.get("/auth/tiktok/callback", async (req, res) => {
+  const { code } = req.query;
+
+  try {
+    const response = await axios.post(
+      "https://open.tiktokapis.com/v2/oauth/token/",
+      {
+        client_key: CLIENT_KEY,
+        client_secret: CLIENT_SECRET,
+        code,
+        grant_type: "authorization_code",
+        redirect_uri: REDIRECT_URI,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    res.json({
+      message: "Autenticado com sucesso!",
+      data: response.data,
+    });
+  } catch (err) {
+    console.error(err.response?.data || err.message);
+    res.status(500).json({ error: "Erro ao autenticar com TikTok" });
+  }
+});
+
+// ==========================
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando na porta ${PORT}`);
+  console.log(`Servidor rodando na porta ${PORT}`);
 });
