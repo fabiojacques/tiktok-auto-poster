@@ -6,9 +6,20 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ============================
-// Google Auth
+// Google Auth (SAFE)
 // ============================
-const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
+let credentials;
+
+try {
+  credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
+
+  // Corrige quebra de linha da private_key
+  credentials.private_key = credentials.private_key.replace(/\\n/g, "\n");
+
+} catch (err) {
+  console.error("❌ ERRO AO CARREGAR GOOGLE_SERVICE_ACCOUNT:", err);
+  process.exit(1);
+}
 
 const auth = new google.auth.GoogleAuth({
   credentials,
@@ -25,7 +36,7 @@ app.get("/health", (req, res) => {
 });
 
 // ============================
-// Listar pastas (nível raiz ou subpastas)
+// Listar pastas
 // ============================
 app.get("/api/folders", async (req, res) => {
   try {
@@ -44,7 +55,7 @@ app.get("/api/folders", async (req, res) => {
 });
 
 // ============================
-// Listar vídeos da pasta
+// Listar vídeos
 // ============================
 app.get("/api/videos", async (req, res) => {
   try {
